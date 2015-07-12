@@ -47,10 +47,8 @@ func main() {
 			case ev := <-watcher.Events:
 
 				if ev.Op&fsnotify.Create == fsnotify.Create {
-					fmt.Printf("File created: %s\n", ev.Name)
 
 					if match, _ := regexp.MatchString("\\w+_test.go", ev.Name); match {
-						fmt.Printf("match: %v\n", ev.Name)
 
 						handleError(watcher.Add(ev.Name))
 						execCmd("go", "test", "./...")
@@ -58,7 +56,6 @@ func main() {
 				}
 
 				if ev.Op&fsnotify.Write == fsnotify.Write {
-					// fmt.Printf("A file was changed: %v\n", ev)
 					execCmd("go", "test", "./...")
 				}
 			}
