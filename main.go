@@ -73,17 +73,12 @@ func CreateWatcher(path string) (watcher *fsnotify.Watcher, err error) {
 		for {
 			select {
 			case ev := <-watcher.Events:
-				if ev.Op&fsnotify.Create == fsnotify.Create {
+				if ev.Op&fsnotify.Create == fsnotify.Create || ev.Op&fsnotify.Write == fsnotify.Write {
 					if IsTestFile(ev.Name) {
 						ExecCmd("go", "test", "-coverprofile", *coverfile, "./...")
 					}
 				}
 
-				if ev.Op&fsnotify.Write == fsnotify.Write {
-					if IsTestFile(ev.Name) {
-						ExecCmd("go", "test", "-coverprofile", *coverfile, "./...")
-					}
-				}
 			}
 		}
 	}()

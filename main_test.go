@@ -23,3 +23,14 @@ func TestCheckPath(t *testing.T) {
 		t.Errorf("error %v\n", path)
 	}
 }
+
+func TestIsTestFile(t *testing.T) {
+	name := "some_test.go"
+	if ok := IsTestFile(name); !ok {
+		t.Errorf("error: %v\n", ok)
+	}
+
+	if ok := IsTestFile("main.go"); ok {
+		t.Errorf("error: %v\n", ok)
+	}
+}
