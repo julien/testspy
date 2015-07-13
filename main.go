@@ -1,114 +1,111 @@
-// testspy is a silly program that watches a directory
-// and runs the "go test" command each time
-// a "test" (*._test.go) file is changed.
 package main
 
 import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 
 	"gopkg.in/fsnotify.v1"
 )
 
 var (
-	path    = flag.String("path", "", "The directory to watch")
-	watcher *fsnotify.Watcher
-	done    chan bool
+	path       = flag.String("path", "", "The directory to watch")
+	coverfile  = flag.String("coverfile", "cover.out", "The coverage file name")
+	done       = make(chan bool, 1)
+	fileRegexp = regexp.MustCompile("._test.go")
+	watcher    *fsnotify.Watcher
 )
 
 func main() {
-	done := make(chan bool, 1)
-
 	flag.Parse()
 
-	if *path == "" {
-		// Get the current working dir
-		wd, err := os.Getwd()
-		handleError(err)
-		*path = wd
+	if err := CheckPath(path); err != nil {
+		log.Fatalf("path error: %v\n", err)
 	}
-	fmt.Printf("Wathing: %v\n", *path)
 
-	matches, err := getTestFiles(*path)
-	handleError(err)
+	fmt.Printf("Watching: %v\n", *path)
 
-	watcher, err = fsnotify.NewWatcher()
-	handleError(err)
-	defer watcher.Close()
+	_, err := CreateWatcher(*path)
+	if err != nil {
+		log.Fatalf("unable to create watcher: %v\n", err)
+	}
 
-	go func() {
-		for {
-			select {
-			case ev := <-watcher.Events:
-
-				if ev.Op&fsnotify.Create == fsnotify.Create {
-
-					if match, _ := regexp.MatchString("\\w+_test.go", ev.Name); match {
-
-						handleError(watcher.Add(ev.Name))
-						execCmd("go", "test", "./...")
-					}
-				}
-
-				if ev.Op&fsnotify.Write == fsnotify.Write {
-					execCmd("go", "test", "./...")
-				}
-			}
-		}
-	}()
-
-	addFiles(matches, *path)
 	<-done
 }
 
-func getTestFiles(path string) (matches []string, err error) {
-
-	pattern := path + "/*_test.go"
-
-	matches, err = filepath.Glob(pattern)
+func handleError(err error) {
 	if err != nil {
-		return nil, err
+		fmt.Errorf("Error: %v\n", err)
 	}
-
-	return matches, nil
 }
 
-func addFiles(files []string, path string) error {
-	n := len(files)
-	var err error
-
-	if n > 0 {
-		for i := 0; i < n; i++ {
-			if err = watcher.Add(files[i]); err != nil {
-				return err
-			}
-		}
-	}
-
-	// if no test files are found,
-	// add the working dir ...
-	if path != "" {
-		if err = watcher.Add(path); err != nil {
+// CheckPath checks if the given path
+// exists or otherwise uses the working directory
+func CheckPath(path *string) error {
+	if *path == "" {
+		wd, err := os.Getwd()
+		if err != nil {
 			return err
 		}
+		*path = wd
+	}
+
+	if _, err := os.Stat(*path); os.IsNotExist(err) {
+		return fmt.Errorf("testspy: path does not exist: %s\n", *path)
 	}
 
 	return nil
 }
 
-func handleError(err error) {
+// CreateWatcher creates a watcher that checks for
+// "test" file changes
+func CreateWatcher(path string) (watcher *fsnotify.Watcher, err error) {
+	watcher, err = fsnotify.NewWatcher()
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
+
+	go func() {
+		for {
+			select {
+			case ev := <-watcher.Events:
+				if ev.Op&fsnotify.Create == fsnotify.Create {
+					if IsTestFile(ev.Name) {
+						ExecCmd("go", "test", "-coverprofile", *coverfile, "./...")
+					}
+				}
+
+				if ev.Op&fsnotify.Write == fsnotify.Write {
+					if IsTestFile(ev.Name) {
+						ExecCmd("go", "test", "-coverprofile", *coverfile, "./...")
+					}
+				}
+			}
+		}
+	}()
+
+	// always add base path
+	if path != "" {
+		if err := watcher.Add(path); err != nil {
+			return nil, err
+		}
+	}
+
+	return watcher, err
 }
 
-func execCmd(f string, arg ...string) {
+// IsTestFile returns a boolean indicating if
+// the given filename is a go "test" file
+func IsTestFile(name string) bool {
+	return fileRegexp.MatchString(name)
+}
+
+// ExecCmd executes a command with the given arguments
+func ExecCmd(f string, arg ...string) {
 	cmd := exec.Command(f, arg...)
 	stdout, err := cmd.StdoutPipe()
 	handleError(err)
