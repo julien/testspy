@@ -34,6 +34,8 @@ func main() {
 		log.Fatalf("unable to create watcher: %v\n", err)
 	}
 
+	RunTests()
+
 	<-done
 }
 
@@ -75,10 +77,9 @@ func CreateWatcher(path string) (watcher *fsnotify.Watcher, err error) {
 			case ev := <-watcher.Events:
 				if ev.Op&fsnotify.Create == fsnotify.Create || ev.Op&fsnotify.Write == fsnotify.Write {
 					if IsTestFile(ev.Name) {
-						ExecCmd("go", "test", "-coverprofile", *coverfile, "./...")
+						RunTests()
 					}
 				}
-
 			}
 		}
 	}()
@@ -97,6 +98,11 @@ func CreateWatcher(path string) (watcher *fsnotify.Watcher, err error) {
 // the given filename is a go "test" file
 func IsTestFile(name string) bool {
 	return fileRegexp.MatchString(name)
+}
+
+// RunTest exectues to go test command
+func RunTests() {
+	ExecCmd("go", "test", "-coverprofile", *coverfile, "./...")
 }
 
 // ExecCmd executes a command with the given arguments

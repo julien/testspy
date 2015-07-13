@@ -1,12 +1,23 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"testing"
 )
 
-func TestCheckPath(t *testing.T) {
+func TestMain(m *testing.M) {
 
+	if *path != "" {
+		log.Fatalf("error %v\n", *path)
+	}
+	fmt.Printf("path: %v\n", *path)
+
+	os.Exit(m.Run())
+}
+
+func TestCheckPath(t *testing.T) {
 	path := ""
 
 	wd, err := os.Getwd()
