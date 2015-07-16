@@ -14,7 +14,6 @@ import (
 
 var (
 	path       = flag.String("path", "", "The directory to watch")
-	coverfile  = flag.String("coverfile", "cover.out", "The coverage file name")
 	done       = make(chan bool, 1)
 	fileRegexp = regexp.MustCompile("._test.go")
 	watcher    *fsnotify.Watcher
@@ -102,7 +101,7 @@ func IsTestFile(name string) bool {
 
 // RunTest exectues to go test command
 func RunTests() {
-	ExecCmd("go", "test", "-coverprofile", *coverfile, "./...")
+	ExecCmd("go", "test", "-cover", "./...")
 }
 
 // ExecCmd executes a command with the given arguments
