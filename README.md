@@ -19,10 +19,18 @@ is configured properly, you should be able to do this
 testspy
 ```
 
-You can optionally user the -path flag to specify the directory
-you want to watch, but it defaults to the current working directory.
+You can optionally use the -path option to specify the directory
+you want to watch
+
+For example:
 
 ```shell
 testspy -path=/home/foo/code/superduper
 ```
+
+If not it defaults to the current working directory.
+
+
+
+
 
