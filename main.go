@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("path error: %v\n", err)
 	}
 
-	fmt.Printf("Watching: %v\n", *path)
+	fmt.Printf("watching: %v\n", *path)
 
 	_, err := CreateWatcher(*path)
 	if err != nil {
@@ -40,7 +40,7 @@ func main() {
 
 func handleError(err error) {
 	if err != nil {
-		fmt.Errorf("Error: %v\n", err)
+		fmt.Errorf("error: %v\n", err)
 	}
 }
 
@@ -56,7 +56,7 @@ func CheckPath(path *string) error {
 	}
 
 	if _, err := os.Stat(*path); os.IsNotExist(err) {
-		return fmt.Errorf("testspy: path does not exist: %s\n", *path)
+		return fmt.Errorf("path does not exist: %s\n", *path)
 	}
 
 	return nil
