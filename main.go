@@ -22,18 +22,18 @@ var (
 func main() {
 	flag.Parse()
 
-	if err := CheckPath(path); err != nil {
+	if err := checkPath(path); err != nil {
 		log.Fatalf("path error: %v\n", err)
 	}
 
 	fmt.Printf("watching: %v\n", *path)
 
-	_, err := CreateWatcher(*path)
+	_, err := createWatcher(*path)
 	if err != nil {
 		log.Fatalf("unable to create watcher: %v\n", err)
 	}
 
-	RunTests()
+	runTests()
 
 	<-done
 }
@@ -44,9 +44,7 @@ func handleError(err error) {
 	}
 }
 
-// CheckPath checks if the given path
-// exists or otherwise uses the working directory
-func CheckPath(path *string) error {
+func checkPath(path *string) error {
 	if *path == "" {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -62,9 +60,7 @@ func CheckPath(path *string) error {
 	return nil
 }
 
-// CreateWatcher creates a watcher that checks for
-// "test" file changes
-func CreateWatcher(path string) (watcher *fsnotify.Watcher, err error) {
+func createWatcher(path string) (watcher *fsnotify.Watcher, err error) {
 	watcher, err = fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -75,8 +71,8 @@ func CreateWatcher(path string) (watcher *fsnotify.Watcher, err error) {
 			select {
 			case ev := <-watcher.Events:
 				if ev.Op&fsnotify.Create == fsnotify.Create || ev.Op&fsnotify.Write == fsnotify.Write {
-					if IsTestFile(ev.Name) {
-						RunTests()
+					if isTestFile(ev.Name) {
+						runTests()
 					}
 				}
 			}
@@ -93,19 +89,15 @@ func CreateWatcher(path string) (watcher *fsnotify.Watcher, err error) {
 	return watcher, err
 }
 
-// IsTestFile returns a boolean indicating if
-// the given filename is a go "test" file
-func IsTestFile(name string) bool {
+func isTestFile(name string) bool {
 	return fileRegexp.MatchString(name)
 }
 
-// RunTest exectues to go test command
-func RunTests() {
-	ExecCmd("go", "test", "-cover", "./...")
+func runTests() {
+	execCmd("go", "test", "-cover", "./...")
 }
 
-// ExecCmd executes a command with the given arguments
-func ExecCmd(f string, arg ...string) {
+func execCmd(f string, arg ...string) {
 	cmd := exec.Command(f, arg...)
 	stdout, err := cmd.StdoutPipe()
 	handleError(err)

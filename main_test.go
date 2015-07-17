@@ -25,7 +25,7 @@ func TestCheckPath(t *testing.T) {
 		t.Errorf("error: %v\n", err)
 	}
 
-	err = CheckPath(&path)
+	err = checkPath(&path)
 	if err != nil {
 		t.Errorf("error %v\n", err)
 	}
@@ -37,11 +37,11 @@ func TestCheckPath(t *testing.T) {
 
 func TestIsTestFile(t *testing.T) {
 	name := "some_test.go"
-	if ok := IsTestFile(name); !ok {
+	if ok := isTestFile(name); !ok {
 		t.Errorf("error: %v\n", ok)
 	}
 
-	if ok := IsTestFile("main.go"); ok {
+	if ok := isTestFile("main.go"); ok {
 		t.Errorf("error: %v\n", ok)
 	}
 }
